@@ -1,0 +1,4 @@
+sources:
+  "4.1.10":
+    url: "https://github.com/zephyrproject-rtos/zephyr.git"
+    branch: "v4.1-branch"

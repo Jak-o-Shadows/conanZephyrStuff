@@ -1,0 +1,9 @@
+pyelftools==0.32
+pykwalify==1.8.0
+PyYAML==6.0.2
+ruamel.yaml==0.18.14
+ruamel.yaml.clib==0.2.12
+ruyaml==0.91.0
+pillow==11.2.1
+pyparsing==3.2.3
+pyserial==3.5
