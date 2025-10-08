@@ -10,9 +10,6 @@
 
 #include <hfsm2/machine.hpp>
 
-/* 1000 msec = 1 sec */
-#define SLEEP_TIME_MS   2000
-
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
@@ -22,11 +19,78 @@
  */
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 
+
+// Configure a simple state machine for the LED state
+struct Context {
+	unsigned delay_ms = 1000;
+	unsigned count = 0;
+	unsigned count_limit = 10;
+};
+using M = hfsm2::MachineT<hfsm2::Config::ContextT<Context>>;
+#define S(s) struct s
+using FSM = M::PeerRoot<
+	           S(Fast),
+			   S(Slow),
+			   S(Medium)
+			>;
+#undef S
+
+struct Fast: FSM::State {
+	void enter(Control& control) {
+		control.context().delay_ms = 100;
+		control.context().count = 0;
+		control.context().count_limit = 2000 / control.context().delay_ms;
+	}
+	void update(FullControl& control) {
+		k_sleep(K_MSEC(control.context().delay_ms));
+		control.context().count++;
+		if (control.context().count >= control.context().count_limit) {
+			control.changeTo<Medium>();
+		}
+	}
+};
+struct Medium: FSM::State {
+	void enter(Control& control) {
+		control.context().delay_ms = 500;
+		control.context().count = 0;
+		control.context().count_limit = 4000 / control.context().delay_ms;
+	}
+	void update(FullControl& control) {
+		k_sleep(K_MSEC(control.context().delay_ms));
+		control.context().count++;
+		if (control.context().count >= control.context().count_limit) {
+			control.changeTo<Slow>();
+		}
+	}
+};
+struct Slow: FSM::State {
+	void enter(Control& control) {
+		control.context().delay_ms = 2000;
+		control.context().count = 0;
+		control.context().count_limit = 5000 / control.context().delay_ms;
+	}
+	void update(FullControl& control) {
+		k_sleep(K_MSEC(control.context().delay_ms));
+		control.context().count++;
+		if (control.context().count >= control.context().count_limit) {
+			control.changeTo<Fast>();
+		}
+	}
+};
+
+
+
+
+
+
 extern "C"
 int main()
 {
 	int ret;
-	bool led_state = true;
+	Context context;
+	FSM::Instance machine{context};
+	machine.changeTo<Fast>();
+	machine.update();
 
 	if (!gpio_is_ready_dt(&led)) {
 		return 0;
@@ -43,9 +107,7 @@ int main()
 			return 0;
 		}
 
-		led_state = !led_state;
-		printf("LED state: %s\n", led_state ? "ON" : "OFF");
-		k_msleep(SLEEP_TIME_MS);
+		machine.update();
 	}
 	return 0;
 }
