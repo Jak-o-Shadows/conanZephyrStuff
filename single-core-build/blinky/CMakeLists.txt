@@ -6,5 +6,5 @@ project(blinky)
 # Non-Zephyr find_packages must come after project()
 find_package(hfsm2 REQUIRED)
 
-target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE src/main.cpp)
 target_link_libraries(app PRIVATE hfsm2::hfsm2)
