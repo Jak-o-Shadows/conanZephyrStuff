@@ -31,9 +31,13 @@ class ZephyrApp(ConanFile):
     }
     exports_sources = "*"
 
+    def build_requirements(self):
+        self.tool_requires("cmake/[>=3.22]")
+        self.tool_requires("ninja/[>=1.10]")
+
     def requirements(self):
-        self.requires("zephyr-sources/4.1.10@ign/stable-4.1")
-        self.requires("zephyr-sdk/0.17.0@ign/stable-0.17.0")
+        self.requires("zephyr-sources/4.2.10@ign/stable-4.2.1")
+        self.requires("zephyr-sdk/0.17.4@ign/stable-0.17.4")
 
     def layout(self):
         self.folders.source = ""
@@ -52,7 +56,7 @@ class ZephyrApp(ConanFile):
     def build(self):
         app_src = Path(self.source_folder)
         app_build = Path(self.build_folder) / "zephyr_build"
-        board = "stm32f3_disco"
+        board = "stm32_min_dev@blue/stm32f103xb"
         board_revision = ""
         zephyr_path = Path(self.dependencies["zephyr-sources"].package_folder).as_posix() + "/zephyr"
         zephyr_modules = zephyr_path.parents[0]
