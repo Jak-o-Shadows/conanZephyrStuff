@@ -15,6 +15,7 @@
 from conan import ConanFile
 from conan.tools.files import copy
 from conan.tools.env import Environment
+from conan.tools.cmake import CMakeDeps, CMakeToolchain
 from pathlib import Path
 
 class ZephyrApp(ConanFile):
@@ -22,14 +23,16 @@ class ZephyrApp(ConanFile):
     version = "0.1"
     package_type = "application"
 
-    settings = "os", "arch"
+    settings = "os", "arch", "build_type"
     options = {
-        "flash" : [True, False]
+        "flash" : [True, False],
+        "pristine" : [True, False]
     }
     default_options = {
-        "flash" : False
+        "flash" : False,
+        "pristine" : False
     }
-    exports_sources = "*"
+    exports_sources = "*"  # TODO: Be more explicit here
 
     def build_requirements(self):
         self.tool_requires("cmake/[>=3.22]")
@@ -39,6 +42,7 @@ class ZephyrApp(ConanFile):
     def requirements(self):
         self.requires("zephyr-sources/4.2.1")
         self.requires("zephyr-sdk/0.17.4")
+        self.requires("hfsm2/2.5.2")
 
     def layout(self):
         self.folders.source = ""
@@ -53,14 +57,28 @@ class ZephyrApp(ConanFile):
         env.define("ZEPHYR_SDK_INSTALL_DIR", sdk_path)
         env.define("ZEPHYR_BASE", zephyr_path)
         env.vars(self).save_script("zephyr_env")
+        
+        # Generate CMake integration files
+        tc = CMakeToolchain(self)
+        tc.generate()
+        deps = CMakeDeps(self)
+        deps.generate()
 
     def build(self):
         app_src = Path(self.source_folder)
         app_build = Path(self.build_folder) / "zephyr_build"
         board = "stm32_min_dev@blue"
+        filepath_toolchain_file = Path(self.generators_folder) / "conan_toolchain.cmake"
+
+        # Allow west to do a pristine build
+        if self.options.pristine:
+            pristine = "-p always"
+        else:
+            pristine = ""
 
         self.run(
-            f"west build -b {board} -s {app_src} -d {app_build}",
+            # Use CMAKE_PROJECT_TOP_LEVEL_INCLUDES to inject Conan's configuration
+            f"west build -b {board} -s {app_src} -d {app_build} {pristine} -- -DCMAKE_BUILD_TYPE={self.settings.build_type} -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES='{filepath_toolchain_file.as_posix()}'",
             env="conanbuild"
         )
         
