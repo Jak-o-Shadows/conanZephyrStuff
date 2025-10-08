@@ -34,10 +34,11 @@ class ZephyrApp(ConanFile):
     def build_requirements(self):
         self.tool_requires("cmake/[>=3.22]")
         self.tool_requires("ninja/[>=1.10]")
+        self.build_requires("openocd/0.12.0")
 
     def requirements(self):
-        self.requires("zephyr-sources/4.2.10@ign/stable-4.2.1")
-        self.requires("zephyr-sdk/0.17.4@ign/stable-0.17.4")
+        self.requires("zephyr-sources/4.2.1")
+        self.requires("zephyr-sdk/0.17.4")
 
     def layout(self):
         self.folders.source = ""
@@ -56,21 +57,13 @@ class ZephyrApp(ConanFile):
     def build(self):
         app_src = Path(self.source_folder)
         app_build = Path(self.build_folder) / "zephyr_build"
-        board = "stm32_min_dev@blue/stm32f103xb"
-        board_revision = ""
-        zephyr_path = Path(self.dependencies["zephyr-sources"].package_folder).as_posix() + "/zephyr"
-        zephyr_modules = zephyr_path.parents[0]
-        zephyr_stm_modules = f"{zephyr_modules}/modules/hal/stm32;{zephyr_modules}/modules/hal/cmsis"
-        print(zephyr_stm_modules)
-        cmake_cmd = f'cmake -B {app_build} -S {app_src} -DBOARD={board} -DZEPHYR_MODULES={zephyr_stm_modules} -GNinja'
+        board = "stm32_min_dev@blue"
 
         self.run(
-            cmake_cmd,
+            f"west build -b {board} -s {app_src} -d {app_build}",
             env="conanbuild"
         )
-
-        build_cmd = f'ninja -C {app_build}'
-        self.run(
-            build_cmd,
-            env="conanbuild"
-        )
+        
+        if self.options.flash:
+            self.output.info("Flashing the board...")
+            self.run(f"west flash -d {app_build}")
