@@ -12,7 +12,7 @@
  # Apache-2.0 License: https://www.apache.org/licenses/LICENSE-2.0
 
 from conan import ConanFile
-from conan.tools.files import copy, chdir, rmdir
+from conan.tools.files import copy, chdir
 from conan.tools.scm import Git
 from pathlib import Path
  
@@ -44,8 +44,13 @@ class ZephyrSourcesConan(ConanFile):
         self.run("west update", cwd=self.source_folder)
  
     def package(self):
-        copy(self, pattern="*", src=self.source_folder, dst=self.package_folder)
-        rmdir(self, Path(self.package_folder) / ".git")   # optional cleanup
+        copy(
+            self,
+            pattern="*",
+            src=self.source_folder,
+            dst=self.package_folder,
+            excludes=["**/.git/**"],
+        )
  
     def package_info(self):
         self.buildenv_info.define(
