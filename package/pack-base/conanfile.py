@@ -35,8 +35,11 @@ class ZephyrSourcesConan(ConanFile):
  
         repo_path = Path(self.source_folder) / "zephyr"
  
-        Git(self, folder=self.source_folder).clone(url=url, target="zephyr")
-        Git(self, folder=str(repo_path)).checkout(branch)
+        Git(self, folder=self.source_folder).clone(
+            url=url,
+            target="zephyr",
+            args=["--depth=1", "--branch", branch],
+        )
  
     def build(self):
         zephyr_path = Path(self.source_folder) / "zephyr"
