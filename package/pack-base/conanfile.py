@@ -13,6 +13,7 @@
 
 from conan import ConanFile
 from conan.tools.files import copy, chdir, rmdir
+from conan.tools.scm import Git
 from pathlib import Path
  
  
@@ -37,8 +38,8 @@ class ZephyrSourcesConan(ConanFile):
  
         repo_path = Path(self.source_folder) / "zephyr"
  
-        # progress-enabled git clone
-        self.run(f"git clone --progress --branch {branch} {url} {repo_path}")
+        Git(self, folder=self.source_folder).clone(url=url, target="zephyr")
+        Git(self, folder=str(repo_path)).checkout(branch)
  
     def build(self):
         zephyr_path = Path(self.source_folder) / "zephyr"
