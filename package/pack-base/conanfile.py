@@ -22,9 +22,6 @@ class ZephyrSourcesConan(ConanFile):
     version = "4.2.1"
     package_type = "application"
     settings = "os", "arch"
- 
-    def build_requirements(self):
-        self.tool_requires("git/[>=2.0]")
 
     def layout(self):
         self.folders.source = "."
