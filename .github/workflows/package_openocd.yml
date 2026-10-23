@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,6 +33,10 @@ jobs:
           which conan && conan --version
           which arm-none-eabi-gcc || echo "(target gcc comes from zephyr-sdk package)"
 
+      - name: Use isolated Conan home
+        shell: bash
+        run: echo "CONAN_HOME=$RUNNER_TEMP/conan-home" >> "$GITHUB_ENV"
+
       - name: Detect Conan profile
         shell: bash -l {0}
         run: conan profile detect --force
@@ -38,15 +45,29 @@ jobs:
         shell: bash -l {0}
         run: |
           conan create ./conanZephyrStuff/package/openocd --build=missing
-          conan cache clean "openocd/*" --source --build
 
-      - name: Upload Conan Artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
+      - name: Prepare Conan package payload
+        shell: bash -l {0}
+        run: |
+          version="$(conan inspect ./conanZephyrStuff/package/openocd --format=json | python -c 'import json, sys; print(json.load(sys.stdin)["version"])')"
+          deploy_dir="$RUNNER_TEMP/openocd-deploy"
+          conan install --requires="openocd/${version}" \
+            --build=missing \
+            --deployer=full_deploy \
+            --deployer-folder="$deploy_dir"
+          tar -czf openocd.tar.gz -C "$deploy_dir" full_deploy
+
+      - name: Publish Conan package release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
         with:
-          name: firmware-stm32_min_dev-blue
-          path: |
-            project/build/**/zephyr/*.hex
-            project/build/**/zephyr/*.bin
-            project/build/**/zephyr/*.elf
-          if-no-files-found: warn
+          tag_name: conan-openocd
+          name: Conan package - openocd
+          make_latest: false
+          overwrite_files: true
+          fail_on_unmatched_files: true
+          files: openocd.tar.gz
+
+      - name: Clean Conan cache
+        shell: bash -l {0}
+        run: conan cache clean "openocd/*" --source --build

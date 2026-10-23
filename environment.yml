@@ -1,0 +1,12 @@
+name: zephyr-build
+channels:
+  - conda-forge
+dependencies:
+  # Minimal Python env: C/C++ toolchains, CMake, Ninja etc. all come
+  # from Conan (tool_requires + zephyr-sdk package), not Conda.
+  - python=3.11
+  - pip
+  - pip:
+      - west
+      - "conan>=2"
+      - pyelftools
