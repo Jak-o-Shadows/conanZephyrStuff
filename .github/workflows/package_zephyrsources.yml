@@ -1,0 +1,52 @@
+name: Package Zephyr Sources
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout app repo
+        uses: actions/checkout@v7
+
+      - name: Set up Conda environment
+        uses: mamba-org/setup-micromamba@v3
+        with:
+          environment-file: environment.yml
+          environment-name: zephyr-build
+          cache-environment: true
+          cache-downloads: true
+
+      - name: Verify tools
+        shell: bash -l {0}
+        run: |
+          which python && python --version
+          which west && west --version
+          which conan && conan --version
+          which arm-none-eabi-gcc || echo "(target gcc comes from zephyr-sdk package)"
+
+      - name: Detect Conan profile
+        shell: bash -l {0}
+        run: conan profile detect --force
+
+      - name: Conan create zephyr-sources (pack-base)
+        shell: bash -l {0}
+        run: |
+          conan create ./conanZephyrStuff/package/pack-base --build=missing
+          conan cache clean "zephyr-sources/*" --source --build
+
+      - name: Upload Conan Artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: firmware-stm32_min_dev-blue
+          path: |
+            project/build/**/zephyr/*.hex
+            project/build/**/zephyr/*.bin
+            project/build/**/zephyr/*.elf
+          if-no-files-found: warn
