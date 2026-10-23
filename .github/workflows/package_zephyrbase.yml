@@ -57,12 +57,12 @@ jobs:
       - name: Conan create zephyr-sdk (pack-sdk)
         shell: bash -l {0}
         run: |
-          conan create ./conanZephyrStuff/package/pack-sdk --build=missing
+          conan create ./package/pack-sdk --build=missing
 
       - name: Prepare Conan package payload
         shell: bash -l {0}
         run: |
-          version="$(conan inspect ./conanZephyrStuff/package/pack-sdk --format=json | python -c 'import json, sys; print(json.load(sys.stdin)["version"])')"
+          version="$(conan inspect ./package/pack-sdk --format=json | python -c 'import json, sys; print(json.load(sys.stdin)["version"])')"
           deploy_dir="$RUNNER_TEMP/zephyr-sdk-deploy"
           conan install --requires="zephyr-sdk/${version}" \
             --build=missing \

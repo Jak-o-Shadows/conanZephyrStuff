@@ -44,12 +44,12 @@ jobs:
       - name: Conan create openocd
         shell: bash -l {0}
         run: |
-          conan create ./conanZephyrStuff/package/openocd --build=missing
+          conan create ./package/openocd --build=missing
 
       - name: Prepare Conan package payload
         shell: bash -l {0}
         run: |
-          version="$(conan inspect ./conanZephyrStuff/package/openocd --format=json | python -c 'import json, sys; print(json.load(sys.stdin)["version"])')"
+          version="$(conan inspect ./package/openocd --format=json | python -c 'import json, sys; print(json.load(sys.stdin)["version"])')"
           deploy_dir="$RUNNER_TEMP/openocd-deploy"
           conan install --requires="openocd/${version}" \
             --build=missing \

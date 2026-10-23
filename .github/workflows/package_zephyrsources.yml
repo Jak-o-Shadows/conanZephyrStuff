@@ -44,7 +44,7 @@ jobs:
       - name: Conan create zephyr-sources (pack-base)
         shell: bash -l {0}
         run: |
-          conan create ./conanZephyrStuff/package/pack-base --build=missing
+          conan create ./package/pack-base --build=missing
 
       - name: Prepare Conan cache archive
         shell: bash -l {0}
